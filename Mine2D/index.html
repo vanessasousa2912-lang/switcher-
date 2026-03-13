@@ -22,14 +22,25 @@
             color: white; padding: 10px; border-radius: 5px; pointer-events: none; font-size: 11px;
             z-index: 10;
         }
+        #error-msg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(255,0,0,0.8); color: white; padding: 20px; border-radius: 10px;
+            display: none; text-align: center; z-index: 100;
+        }
     </style>
 </head>
 <body>
 
+    <div id="error-msg">
+        <b>Erro: Imagem não encontrada!</b><br>
+        Certifique-se que o arquivo <b>SpriteSheetBlocks.png</b><br>
+        está dentro da pasta <b>Mine2D</b> no GitHub.
+    </div>
+
     <div id="info">
         <b>X:</b> <span id="valX">0</span> | <b>Y:</b> <span id="valY">0</span><br>
         <b>Zoom:</b> <span id="valZoom">100</span>%<br>
-        <i>Verifica se SpriteSheetBlocks.png está na mesma pasta!</i>
+        <i>Status: Carregando texturas...</i>
     </div>
 
     <div id="ui"></div>
@@ -38,17 +49,18 @@
 
 <script>
 /**
- * MINECRAFT 2D INFINITO - VERSÃO CORRIGIDA
- * Luis, se estiveres a usar pastas no GitHub, certifica-te de que os nomes coincidem.
+ * MINECRAFT 2D INFINITO - VERSÃO CORRIGIDA (PATH FIX)
+ * Luis, este código assume que a imagem está na mesma pasta que este HTML.
  */
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const hotbarUI = document.getElementById('ui');
+const errorDisplay = document.getElementById('error-msg');
 
-// Carregamento da Textura com cache bust para evitar bugs de versão antiga
+// Removido o cache bust complexo para garantir compatibilidade com GitHub Pages
 const spriteSheet = new Image();
-spriteSheet.src = 'SpriteSheetBlocks.png?v=' + Date.now(); 
+spriteSheet.src = 'SpriteSheetBlocks.png'; 
 
 let TILE_SIZE_BASE = 24; 
 let zoomLevel = 1.0;
@@ -95,15 +107,22 @@ function init() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
     camera.y = (WORLD_HEIGHT * TILE_SIZE_BASE) * 0.5 - canvas.height / 2;
-    setupUI();
+    
     spriteSheet.onload = () => {
-        console.log("Textura carregada com sucesso!");
+        errorDisplay.style.display = 'none';
+        setupUI();
         requestAnimationFrame(gameLoop);
     };
+    
     spriteSheet.onerror = () => {
-        console.error("Erro ao carregar SpriteSheetBlocks.png. Verifica se o ficheiro está na mesma pasta do index.html");
+        errorDisplay.style.display = 'block';
+        console.error("404: SpriteSheetBlocks.png não encontrado no caminho: " + spriteSheet.src);
     };
-    if(spriteSheet.complete) requestAnimationFrame(gameLoop);
+
+    if(spriteSheet.complete && spriteSheet.naturalWidth !== 0) {
+        setupUI();
+        requestAnimationFrame(gameLoop);
+    }
 }
 
 function getTerrainHeight(x) {
